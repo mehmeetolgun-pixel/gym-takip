@@ -45,6 +45,7 @@ def load_data():
             df["Tarih"] = pd.to_datetime(df["Tarih"])
         return df
     except Exception as e:
+        # Hata durumunda boş şablon döndür
         return pd.DataFrame(columns=[
             "Tarih", "Personel", 
             "Walkin_Gelen", "Walkin_Satis", 
@@ -60,9 +61,8 @@ def save_data_to_cloud(df):
     conn.update(worksheet="Sayfa1", data=df)
 
 # --- AYARLAR (SESSION STATE) ---
-# Online'da personel listesi sıfırlanmasın diye hafızada tutuyoruz
 if "staff_list" not in st.session_state:
-    st.session_state.staff_list = ["Ahmet", "Mehmet", "Ayşe", "Yönetici"] # Varsayılanlar
+    st.session_state.staff_list = ["Ahmet", "Mehmet", "Ayşe", "Yönetici"] 
     
 if "club_target" not in st.session_state:
     st.session_state.club_target = 500000
@@ -70,57 +70,33 @@ if "club_target" not in st.session_state:
 # --- MODERN DARK TEMA CSS ---
 st.markdown("""
 <style>
-    /* 1. TÜM ARKA PLAN (KOYU) */
-    .stApp {
-        background-color: #0E1117 !important;
-        color: #FAFAFA !important;
-    }
-    [data-testid="stSidebar"] {
-        background-color: #262730 !important;
-        border-right: 1px solid #333333;
-    }
-    .css-card {
-        background-color: #1E1E1E;
-        padding: 20px;
-        border-radius: 12px;
-        border: 1px solid #333;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-        margin-bottom: 20px;
-    }
-    div[data-testid="metric-container"] {
-        background-color: #1A1C24 !important;
-        border: 1px solid #333 !important;
-        padding: 15px;
-        border-radius: 10px;
-    }
-    div[data-testid="metric-container"] label {
-        color: #9CA3AF !important; 
-    }
-    div[data-testid="metric-container"] div[data-testid="stMetricValue"] {
-        color: #4ADE80 !important; 
-        font-size: 26px !important;
-    }
+    /* 1. ARKA PLAN */
+    .stApp { background-color: #0E1117 !important; color: #FAFAFA !important; }
+    
+    /* 2. YAN MENÜ */
+    [data-testid="stSidebar"] { background-color: #262730 !important; border-right: 1px solid #333333; }
+    
+    /* 3. KARTLAR */
+    .css-card { background-color: #1E1E1E; padding: 20px; border-radius: 12px; border: 1px solid #333; margin-bottom: 20px; }
+    
+    /* 4. METRİKLER */
+    div[data-testid="metric-container"] { background-color: #1A1C24 !important; border: 1px solid #333 !important; padding: 15px; border-radius: 10px; }
+    div[data-testid="metric-container"] label { color: #9CA3AF !important; }
+    div[data-testid="metric-container"] div[data-testid="stMetricValue"] { color: #4ADE80 !important; font-size: 26px !important; }
+    
+    /* 5. GİRİŞLER */
     .stTextInput input, .stNumberInput input, .stDateInput input, .stSelectbox div[data-baseweb="select"] {
-        background-color: #262730 !important;
-        color: white !important;
-        border: 1px solid #4B5563 !important;
+        background-color: #262730 !important; color: white !important; border: 1px solid #4B5563 !important;
     }
-    [data-testid="stDataFrame"] {
-        background-color: #1A1C24 !important;
-        border-radius: 10px;
-        border: 1px solid #333;
-    }
-    div.stButton > button {
-        background-color: #22C55E !important;
-        color: #000000 !important;
-        font-weight: bold !important;
-        border: none;
-        border-radius: 6px;
-    }
-    div.stButton > button:hover {
-        background-color: #16A34A !important;
-        color: white !important;
-    }
+    
+    /* 6. TABLO */
+    [data-testid="stDataFrame"] { background-color: #1A1C24 !important; border-radius: 10px; border: 1px solid #333; }
+    
+    /* 7. BUTONLAR (Kırmızı Silme Butonu için özel ayar aşağıda yapılacak, bu genel yeşil buton) */
+    div.stButton > button { background-color: #22C55E !important; color: #000000 !important; font-weight: bold !important; border: none; border-radius: 6px; }
+    div.stButton > button:hover { background-color: #16A34A !important; color: white !important; }
+    
+    /* 8. YAZILAR */
     h1, h2, h3, h4 { color: #FFFFFF !important; }
     p, span, div { color: #E5E7EB; }
 </style>
@@ -134,10 +110,7 @@ with st.sidebar:
     st.markdown("<h2 style='text-align: center; color: #4ADE80;'>OLGUN</h2>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #9CA3AF; font-size: 0.8rem;'>CRM Paneli (Online)</p>", unsafe_allow_html=True)
     st.markdown("---")
-    
-    # MENÜ SEÇENEKLERİ
-    selected = st.radio("MENÜ", ["📊 Genel Bakış", "👤 Bireysel Analiz", "📝 Veri Girişi", "📑 Raporlar", "⚙️ Ayarlar"])
-    
+    selected = st.radio("MENÜ", ["📊 Genel Bakış", "👤 Bireysel Analiz", "📝 Veri Girişi", "📑 Raporlar & Silme", "⚙️ Ayarlar"])
     st.markdown("---")
     st.caption("🟢 Sistem Online")
     if st.button("Çıkış Yap"):
@@ -163,179 +136,96 @@ if selected == "📊 Genel Bakış":
         k1.metric("TOPLAM CİRO", f"{toplam_ciro:,.0f} ₺")
         k2.metric("HEDEF", f"{club_target:,.0f} ₺")
         k3.metric("KALAN", f"{kalan:,.0f} ₺", delta=f"%{yuzde:.1f}", delta_color="normal")
-        
         st.write("")
         
-        # --- KAYNAK ANALİZİ ---
+        # KAYNAK ANALİZİ
         st.subheader("🎯 Kaynak Dönüşüm Oranları")
         st.markdown("<div style='background-color:#1A1C24; padding:15px; border-radius:10px; border:1px solid #333;'>", unsafe_allow_html=True)
-        
-        sources = [
-            ("Walk-in", "Walkin_Gelen", "Walkin_Satis"),
-            ("Referans", "Referans_Gelen", "Referans_Satis"),
-            ("Dış Arama", "Dis_Arama_Gelen", "Dis_Arama_Satis"),
-            ("Sosyal Medya", "Sosyal_Gelen", "Sosyal_Satis"),
-            ("Web Sitesi", "Web_Gelen", "Web_Satis")
-        ]
-        
+        sources = [("Walk-in","Walkin_Gelen","Walkin_Satis"), ("Referans","Referans_Gelen","Referans_Satis"), ("Dış Arama","Dis_Arama_Gelen","Dis_Arama_Satis"), ("Sosyal Medya","Sosyal_Gelen","Sosyal_Satis"), ("Web","Web_Gelen","Web_Satis")]
         s_data = []
         for name, cg, cs in sources:
-            tg = df[cg].sum()
-            ts = df[cs].sum()
-            ratio = (ts / tg * 100) if tg > 0 else 0
+            tg = df[cg].sum(); ts = df[cs].sum(); ratio = (ts/tg*100) if tg>0 else 0
             s_data.append({"Kanal": name, "Gelen": int(tg), "Satış": int(ts), "Başarı %": ratio})
-            
-        st.dataframe(
-            pd.DataFrame(s_data),
-            column_config={
-                "Başarı %": st.column_config.ProgressColumn("Dönüşüm", format="%.1f%%", min_value=0, max_value=100)
-            },
-            use_container_width=True, hide_index=True
-        )
+        st.dataframe(pd.DataFrame(s_data), column_config={"Başarı %": st.column_config.ProgressColumn("Dönüşüm", format="%.1f%%", min_value=0, max_value=100)}, use_container_width=True, hide_index=True)
         st.markdown("</div>", unsafe_allow_html=True)
         st.write("")
 
-        # EKİP TABLOSU & WHATSAPP
+        # LİDERLİK & WHATSAPP
         c_main, c_side = st.columns([2, 1])
-        
         cols_num = df.select_dtypes(include=['number']).columns
         cols_all = ["Personel"] + list(cols_num)
         summ = df[cols_all].groupby("Personel").sum().reset_index()
         summ["TopSatis"] = (summ["Walkin_Satis"] + summ["Referans_Satis"] + summ["Dis_Arama_Satis"] + summ["Sosyal_Satis"] + summ["Web_Satis"] + summ["Aktif_Yenileme"] + summ["Pasif_Yenileme"])
-        
         max_c = summ["Tahsilat"].max()
         summ["Personel_G"] = summ.apply(lambda x: f"👑 {x['Personel']}" if x['Tahsilat'] == max_c and max_c > 0 else x['Personel'], axis=1)
 
         with c_main:
             st.subheader("🏆 Liderlik Tablosu")
-            st.dataframe(
-                summ[["Personel_G", "Tahsilat", "TopSatis"]],
-                column_config={"Personel_G": "Personel", "Tahsilat": st.column_config.NumberColumn("Ciro", format="%.0f ₺")},
-                use_container_width=True, hide_index=True
-            )
+            st.dataframe(summ[["Personel_G", "Tahsilat", "TopSatis"]], column_config={"Personel_G": "Personel", "Tahsilat": st.column_config.NumberColumn("Ciro", format="%.0f ₺")}, use_container_width=True, hide_index=True)
             
         with c_side:
-            st.subheader("📱 WhatsApp Rapor")
+            st.subheader("📱 WhatsApp")
             with st.container():
                 st.markdown("<div style='background-color:#1A1C24; padding:10px; border-radius:10px;'>", unsafe_allow_html=True)
                 rd = st.date_input("Tarih", datetime.now())
                 df['Tarih'] = pd.to_datetime(df['Tarih'])
                 ddf = df[df['Tarih'].dt.date == rd].copy()
-                
                 if not ddf.empty:
                     dsum = ddf[cols_all].groupby("Personel").sum().reset_index()
                     dsum["GS"] = (dsum["Walkin_Satis"] + dsum["Referans_Satis"] + dsum["Dis_Arama_Satis"] + dsum["Sosyal_Satis"] + dsum["Web_Satis"] + dsum["Aktif_Yenileme"] + dsum["Pasif_Yenileme"])
                     dsum["GG"] = (dsum["Walkin_Gelen"] + dsum["Referans_Gelen"] + dsum["Dis_Arama_Gelen"] + dsum["Sosyal_Gelen"] + dsum["Web_Gelen"])
-                    
-                    txt = f"📅 *{rd.strftime('%d.%m')} OLGUN RAPOR*\n💰 Ciro: {ddf['Tahsilat'].sum():,.0f} TL\n✅ Satış: {int(dsum['GS'].sum())} Adet\n---\n"
-                    for _, r in dsum.iterrows():
-                        txt += f"👤 {r['Personel']}: {int(r['GG'])} Gör / {int(r['GS'])} Satış\n"
+                    txt = f"📅 *{rd.strftime('%d.%m')} RAPOR*\n💰 Ciro: {ddf['Tahsilat'].sum():,.0f} TL\n✅ Satış: {int(dsum['GS'].sum())} Adet\n---\n"
+                    for _, r in dsum.iterrows(): txt += f"👤 {r['Personel']}: {int(r['GG'])} Gör / {int(r['GS'])} Satış\n"
                     st.text_area("Kopyala:", txt, height=150)
-                else:
-                    st.info("Kayıt yok.")
+                else: st.info("Kayıt yok.")
                 st.markdown("</div>", unsafe_allow_html=True)
 
 # ==========================================
 # 2. SAYFA: BİREYSEL ANALİZ
 # ==========================================
 elif selected == "👤 Bireysel Analiz":
-    st.title("Bireysel Performans Analizi")
-    
-    if df.empty:
-        st.warning("Henüz veri girişi yapılmamış.")
+    st.title("Bireysel Analiz")
+    if df.empty: st.warning("Veri yok.")
     else:
-        # Personel Listesi
         active_staff = df["Personel"].unique().tolist()
-        
-        if len(active_staff) > 0:
-            selected_p = st.selectbox("Personel Seçiniz:", active_staff)
-            
-            # Filtrele
+        if active_staff:
+            selected_p = st.selectbox("Personel Seç:", active_staff)
             p_df = df[df["Personel"] == selected_p].copy()
-            
             if not p_df.empty:
-                # Toplamlar
-                p_total_ciro = p_df["Tahsilat"].sum()
-                
-                # Kanal Bazlı Toplamlar
-                channels = {
-                    "Walk-in": ("Walkin_Gelen", "Walkin_Satis"),
-                    "Referans": ("Referans_Gelen", "Referans_Satis"),
-                    "Dış Arama": ("Dis_Arama_Gelen", "Dis_Arama_Satis"),
-                    "Sosyal Medya": ("Sosyal_Gelen", "Sosyal_Satis"),
-                    "Web": ("Web_Gelen", "Web_Satis")
-                }
-                
+                p_total = p_df["Tahsilat"].sum()
+                channels = {"Walk-in":("Walkin_Gelen","Walkin_Satis"), "Referans":("Referans_Gelen","Referans_Satis"), "Dış Arama":("Dis_Arama_Gelen","Dis_Arama_Satis"), "Sosyal":("Sosyal_Gelen","Sosyal_Satis"), "Web":("Web_Gelen","Web_Satis")}
                 p_stats = []
-                for name, (cg, cs) in channels.items():
-                    g = p_df[cg].sum()
-                    s = p_df[cs].sum()
-                    r = (s/g*100) if g > 0 else 0
-                    p_stats.append({"Kanal": name, "Gelen": g, "Satış": s, "Oran": r})
+                for n, (g, s) in channels.items():
+                    gv = p_df[g].sum(); sv = p_df[s].sum(); r = (sv/gv*100) if gv>0 else 0
+                    p_stats.append({"Kanal":n, "Gelen":gv, "Satış":sv, "Oran":r})
+                df_ps = pd.DataFrame(p_stats)
+                ts = df_ps["Satış"].sum() + p_df["Aktif_Yenileme"].sum() + p_df["Pasif_Yenileme"].sum()
+                best = df_ps.loc[df_ps["Satış"].idxmax()]["Kanal"] if df_ps["Satış"].sum()>0 else "-"
                 
-                df_p_stats = pd.DataFrame(p_stats)
-                total_sales = df_p_stats["Satış"].sum() + p_df["Aktif_Yenileme"].sum() + p_df["Pasif_Yenileme"].sum()
-                
-                # En İyi Kanal
-                best_channel = "-"
-                if not df_p_stats.empty and df_p_stats["Satış"].sum() > 0:
-                     best_channel = df_p_stats.loc[df_p_stats["Satış"].idxmax()]["Kanal"]
-                
-                # ÜST KARTLAR
-                c1, c2, c3 = st.columns(3)
-                c1.metric("Toplam Ciro", f"{p_total_ciro:,.0f} ₺")
-                c2.metric("Toplam Satış", f"{int(total_sales)}")
-                c3.metric("En Güçlü Kanal", best_channel)
+                c1,c2,c3 = st.columns(3)
+                c1.metric("Ciro", f"{p_total:,.0f} ₺"); c2.metric("Satış", int(ts)); c3.metric("En İyi", best)
                 
                 st.write("---")
-                
-                # GRAFİKLER
                 g1, g2 = st.columns(2)
-                
                 with g1:
-                    st.subheader("📊 Kanal Dönüşüm")
-                    fig_bar = go.Figure()
-                    fig_bar.add_trace(go.Bar(x=df_p_stats["Kanal"], y=df_p_stats["Gelen"], name='Gelen', marker_color='#60A5FA'))
-                    fig_bar.add_trace(go.Bar(x=df_p_stats["Kanal"], y=df_p_stats["Satış"], name='Satış', marker_color='#4ADE80'))
-                    fig_bar.update_layout(barmode='group', template="plotly_dark", height=350, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-                    st.plotly_chart(fig_bar, use_container_width=True)
-                    
+                    fig_bar = go.Figure(data=[go.Bar(name='Gelen', x=df_ps["Kanal"], y=df_ps["Gelen"], marker_color='#60A5FA'), go.Bar(name='Satış', x=df_ps["Kanal"], y=df_ps["Satış"], marker_color='#4ADE80')])
+                    fig_bar.update_layout(barmode='group', template="plotly_dark", height=300, paper_bgcolor='rgba(0,0,0,0)'); st.plotly_chart(fig_bar, use_container_width=True)
                 with g2:
-                    st.subheader("🥧 Satış Dağılımı")
-                    fig_pie = px.pie(df_p_stats, values='Satış', names='Kanal', template="plotly_dark", hole=0.4)
-                    fig_pie.update_traces(textinfo='percent+label')
-                    fig_pie.update_layout(height=350, paper_bgcolor='rgba(0,0,0,0)')
-                    st.plotly_chart(fig_pie, use_container_width=True)
-                
-                st.subheader("📈 Günlük Trend")
-                p_daily = p_df.groupby("Tarih")["Tahsilat"].sum().reset_index()
-                fig_line = px.line(p_daily, x="Tarih", y="Tahsilat", template="plotly_dark", markers=True)
-                fig_line.update_traces(line_color="#F59E0B")
-                fig_line.update_layout(height=300, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-                st.plotly_chart(fig_line, use_container_width=True)
-            else:
-                st.info("Bu personele ait veri yok.")
-        else:
-            st.info("Veri tabanında kayıtlı personel bulunamadı.")
+                    fig_pie = px.pie(df_ps, values='Satış', names='Kanal', template="plotly_dark", hole=0.4); fig_pie.update_layout(height=300, paper_bgcolor='rgba(0,0,0,0)'); st.plotly_chart(fig_pie, use_container_width=True)
+            else: st.info("Veri yok.")
+        else: st.info("Personel yok.")
 
 # ==========================================
 # 3. SAYFA: VERİ GİRİŞİ
 # ==========================================
 elif selected == "📝 Veri Girişi":
-    st.title("Günlük Giriş")
-    
-    # Session State'den personel listesini çek
+    st.title("Veri Girişi")
     current_staff = st.session_state.staff_list
-    
     with st.form("entry"):
         c1, c2 = st.columns(2)
         d_val = c1.date_input("Tarih", datetime.now())
         p_val = c2.selectbox("Personel", current_staff)
         st.markdown("---")
-        
-        h1, h2 = st.columns(2)
-        h1.markdown("<h4 style='color:#60A5FA'>📥 POTANSİYEL</h4>", unsafe_allow_html=True)
-        h2.markdown("<h4 style='color:#4ADE80'>✅ SATIŞ</h4>", unsafe_allow_html=True)
         
         def row(l, k):
             a, b = st.columns(2)
@@ -343,82 +233,78 @@ elif selected == "📝 Veri Girişi":
             v2 = b.number_input(f"{l} Satış", min_value=0, key=f"{k}_s")
             return v1, v2
 
-        wg, ws = row("Walk-in", "w")
-        rg, rs = row("Referans", "r")
-        dg, ds = row("Dış Arama", "d")
-        sg, ss = row("Sosyal Medya", "s")
-        wbg, wbs = row("Web", "wb")
-        
+        wg, ws = row("Walk-in", "w"); rg, rs = row("Referans", "r"); dg, ds = row("Dış Arama", "d"); sg, ss = row("Sosyal", "s"); wbg, wbs = row("Web", "wb")
         st.markdown("---")
         f1, f2, f3 = st.columns(3)
-        ay = f1.number_input("Aktif Yenileme", min_value=0)
-        py = f2.number_input("Pasif Yenileme", min_value=0)
-        tahsilat = f3.number_input("TOPLAM TAHSİLAT (TL)", min_value=0.0, step=100.0)
+        ay = f1.number_input("Aktif Yenileme", min_value=0); py = f2.number_input("Pasif Yenileme", min_value=0); tahsilat = f3.number_input("TOPLAM TAHSİLAT", min_value=0.0, step=100.0)
         
         if st.form_submit_button("KAYDET", use_container_width=True):
-            new_row = pd.DataFrame([{
-                "Tarih": d_val.strftime("%Y-%m-%d"),
-                "Personel": p_val,
-                "Walkin_Gelen": wg, "Walkin_Satis": ws,
-                "Referans_Gelen": rg, "Referans_Satis": rs,
-                "Dis_Arama_Gelen": dg, "Dis_Arama_Satis": ds,
-                "Sosyal_Gelen": sg, "Sosyal_Satis": ss,
-                "Web_Gelen": wbg, "Web_Satis": wbs,
-                "Aktif_Yenileme": ay, "Pasif_Yenileme": py,
-                "Tahsilat": tahsilat
-            }])
-            
+            new_row = pd.DataFrame([{"Tarih": d_val.strftime("%Y-%m-%d"), "Personel": p_val, "Walkin_Gelen": wg, "Walkin_Satis": ws, "Referans_Gelen": rg, "Referans_Satis": rs, "Dis_Arama_Gelen": dg, "Dis_Arama_Satis": ds, "Sosyal_Gelen": sg, "Sosyal_Satis": ss, "Web_Gelen": wbg, "Web_Satis": wbs, "Aktif_Yenileme": ay, "Pasif_Yenileme": py, "Tahsilat": tahsilat}])
             updated_df = pd.concat([df, new_row], ignore_index=True)
             save_data_to_cloud(updated_df)
-            st.success("✅ Google Sheets'e Başarıyla Kaydedildi!")
-            st.rerun()
+            st.success("✅ Kaydedildi!"); st.rerun()
 
 # ==========================================
-# 4. SAYFA: RAPORLAR
+# 4. SAYFA: RAPORLAR VE SİLME (YENİLENEN KISIM)
 # ==========================================
-elif selected == "📑 Raporlar":
-    st.title("Raporlar")
-    if not df.empty:
-        pf = st.multiselect("Filtrele", df["Personel"].unique())
-        sd = df[df["Personel"].isin(pf)] if pf else df
-        st.dataframe(sd, use_container_width=True)
+elif selected == "📑 Raporlar & Silme":
+    st.title("Raporlar ve Veri Yönetimi")
+    
+    if df.empty:
+        st.info("Henüz veri yok.")
     else:
-        st.info("Veri yok.")
+        # 1. TABLOYU GÖSTER
+        st.dataframe(df, use_container_width=True)
+        
+        st.markdown("---")
+        
+        # 2. SİLME PANELİ (EXPANDER İÇİNDE GÜVENLİ)
+        with st.expander("🗑️ KAYIT SİLME PANELİ (Dikkatli Kullanın)"):
+            st.warning("Buradan silinen veriler Google Sheets'ten de kalıcı olarak silinir!")
+            
+            # Seçim kutusu için liste hazırla: INDEX | TARİH | PERSONEL | TUTAR
+            # Kullanıcı hangi satırı sildiğini anlasın diye detaylı yazıyoruz
+            row_options = [
+                f"{i} | {row['Tarih'].strftime('%Y-%m-%d')} | {row['Personel']} | {row['Tahsilat']} TL" 
+                for i, row in df.iterrows()
+            ]
+            
+            # Kullanıcı seçim yapar
+            selected_row_str = st.selectbox("Silinecek Kaydı Seçin:", row_options)
+            
+            # Silme Butonu
+            if st.button("SEÇİLİ KAYDI KALICI OLARAK SİL"):
+                if selected_row_str:
+                    # Seçilen string'in başındaki Index numarasını al (Örn: "5 | ..." -> 5)
+                    index_to_drop = int(selected_row_str.split(" | ")[0])
+                    
+                    # O satırı düşür
+                    updated_df = df.drop(index_to_drop)
+                    
+                    # Yeni halini buluta kaydet
+                    save_data_to_cloud(updated_df)
+                    
+                    st.success("Kayıt başarıyla silindi!")
+                    st.rerun()
 
 # ==========================================
-# 5. SAYFA: AYARLAR (GÜNCELLENDİ: SİLME EKLENDİ)
+# 5. SAYFA: AYARLAR (PERSONEL SİLME DAHİL)
 # ==========================================
 elif selected == "⚙️ Ayarlar":
     st.title("Ayarlar")
-    
     c1, c2 = st.columns(2)
     with c1:
-        st.subheader("Hedef Belirle")
-        current_target = st.session_state.club_target
-        nt = st.number_input("Aylık Hedef (TL)", value=current_target, step=5000)
-        if st.button("Hedefi Güncelle"):
-            st.session_state.club_target = nt
-            st.success(f"Hedef {nt} TL olarak güncellendi!")
-            st.rerun()
-            
+        st.subheader("Hedef")
+        nt = st.number_input("Aylık Hedef", value=st.session_state.club_target, step=5000)
+        if st.button("Güncelle"): st.session_state.club_target = nt; st.success("Tamam"); st.rerun()
     with c2:
-        st.subheader("Personel Yönetimi")
-        np = st.text_input("Yeni Personel Ekle")
+        st.subheader("Personel")
+        np = st.text_input("Ekle")
         if st.button("Listeye Ekle"):
-            if np and np not in st.session_state.staff_list:
-                st.session_state.staff_list.append(np)
-                st.success(f"{np} eklendi!")
-                st.rerun()
-        
+            if np and np not in st.session_state.staff_list: st.session_state.staff_list.append(np); st.rerun()
         st.write("---")
-        st.write("📋 **Mevcut Personel Listesi:**")
-        
-        # SİLME İŞLEMİ İÇİN DÖNGÜ
+        st.write("**Mevcut Personel:**")
         for s in st.session_state.staff_list:
-            col_name, col_btn = st.columns([3, 1])
-            col_name.text(f"👤 {s}")
-            # Her butona benzersiz bir 'key' atıyoruz
-            if col_btn.button("SİL", key=f"del_{s}"):
-                st.session_state.staff_list.remove(s)
-                st.success(f"{s} silindi.")
-                st.rerun()
+            sc1, sc2 = st.columns([3,1])
+            sc1.text(f"👤 {s}")
+            if sc2.button("SİL", key=f"del_{s}"): st.session_state.staff_list.remove(s); st.rerun()
